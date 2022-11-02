@@ -27,7 +27,7 @@ bool RFM69LPL::initialize(){
 
   Serial.begin(115200); Serial.println();
 
-  for (byte i = 0; CONFIG[i][0] != 255; i++) //write initial regs
+  for (byte i = 0; CONFIG[i][0] != 255; i++) //write regs
     writeReg(CONFIG[i][0], CONFIG[i][1]);
 
   setHighPower(1);
