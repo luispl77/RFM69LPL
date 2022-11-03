@@ -13,4 +13,4 @@ Functions:
 - `setPowerLevel()`, `setHighPower()` and `setHighPowerRegs()` change transmitter settings regarding the PA;
 - `readReg()`, `writeReg()`, `select()`, `unselect()` and `readAllRegs()` are the SPI functions to write/read RFM69's registers;
 - `readTemperature()` reads temperature register and converts to centigrade;
-- `rcCalibration()` puts the radio into RC calibration mode and waits until it`s done.
+- `rcCalibration()` puts the radio into RC calibration mode and waits until it's done.
