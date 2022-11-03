@@ -92,6 +92,7 @@ void RFM69LPL::setModulationType(uint8_t mod){
   }
   else if(mod == MOD_FSK){
     writeReg(REG_DATAMODUL, RF_DATAMODUL_DATAMODE_CONTINUOUSNOBSYNC | RF_DATAMODUL_MODULATIONTYPE_FSK | RF_DATAMODUL_MODULATIONSHAPING_00);
+  }
 }
 
 void RFM69LPL::setFrequency(uint32_t freqHz){
