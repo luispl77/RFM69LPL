@@ -11,6 +11,9 @@
 #define RF69OOK_MODE_RX          3 // RX MODE
 #define RF69OOK_MODE_TX          4 // TX MODE
 
+#define MOD_OOK 1 //on off keying modulation
+#define MOD_FSK 2 //frequency shit keying modulation
+
 #define null                  0
 #define COURSE_TEMP_COEF    -90 // puts the temperature reading in the ballpark, user can fine tune the returned value
 #define RF69OOK_FSTEP 61.03515625 // == FXOSC/2^19 = 32mhz/2^19 (p13 in DS)

@@ -85,6 +85,15 @@ void RFM69LPL::setFrequencyMHz(float f){
   setFrequency(f * 1000000);
 }
 
+void RFM69LPL::setModulationType(uint8_t mod){
+  // Set literal frequency using floating point MHz value
+  if(mod == MOD_OOK){
+    writeReg(REG_DATAMODUL, RF_DATAMODUL_DATAMODE_CONTINUOUSNOBSYNC | RF_DATAMODUL_MODULATIONTYPE_OOK | RF_DATAMODUL_MODULATIONSHAPING_00);
+  }
+  else if(mod == MOD_FSK){
+    writeReg(REG_DATAMODUL, RF_DATAMODUL_DATAMODE_CONTINUOUSNOBSYNC | RF_DATAMODUL_MODULATIONTYPE_FSK | RF_DATAMODUL_MODULATIONSHAPING_00);
+}
+
 void RFM69LPL::setFrequency(uint32_t freqHz){
   // set the frequency (in Hz)
   // TODO: p38 hopping sequence may need to be followed in some cases
