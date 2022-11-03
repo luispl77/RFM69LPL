@@ -1,5 +1,5 @@
 # RFM69LPL
-RFM69HW  custom radio library for register setups and radio control. 
+RFM69HW custom radio library for OOK/FSK continuos mode only - register setups and radio control. 
 
 Functions: 
 - `initialize()` initializes radio in default mode (OOK base settings) and sets radio in standby;
