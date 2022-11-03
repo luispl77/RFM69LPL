@@ -35,6 +35,7 @@ class RFM69LPL {
     uint32_t getFrequency();
     void setFrequency(uint32_t freqHz);
     void setFrequencyMHz(float f);
+    void setModulationType(uint8_t mod);
     void setCS(byte newSPISlaveSelect);
     int8_t readRSSI(bool forceTrigger=false);
     void setHighPower(bool onOFF=true); //have to call it after initialize for RFM69HW
