@@ -9,7 +9,7 @@ Functions:
 - `setModulationType()` sets either OOK or FSK modulation;
 - `setBitrate()` is used when using bit synchronizer (see datasheet);
 - `setBandwidth()`, `setRSSIThreshold()`, `setFixedThreshold()`, `setSensitivityBoost()` and `readRSSI()` change receiver settings (see datasheet);
-- `sleep()` puts the radio in sleep mode;
+- `sleep()` puts radio in sleep mode;
 - `setPowerLevel()`, `setHighPower()` and `setHighPowerRegs()` change transmitter settings regarding the PA;
 - `readReg()`, `writeReg()`, `select()`, `unselect()` and `readAllRegs()` are the SPI functions to write/read RFM69's registers;
 - `readTemperature()` reads temperature register and converts to centigrade;
