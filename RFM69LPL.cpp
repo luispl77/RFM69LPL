@@ -30,8 +30,6 @@ bool RFM69LPL::initialize(){
   for (byte i = 0; CONFIG[i][0] != 255; i++) //write regs
     writeReg(CONFIG[i][0], CONFIG[i][1]);
 
-  setHighPower(1);
-
   setMode(RF69OOK_MODE_STANDBY);
   Serial.print("Waiting for flag MODE_READY...");
   while ((readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00); // Wait for ModeReady
@@ -41,6 +39,27 @@ bool RFM69LPL::initialize(){
   return true;
 }
 
+void RFM69LPL::initializeTransmit(byte dbm, int PA_modes, int OCP) { //keep a minimum of -11 dbm to avoid writing negative values into the palevel reg.
+  setMode(RF69OOK_MODE_TX); //put in transmit mode
+  switch(PA_modes){
+    case PA_MODE_PA0:
+      writeReg(REG_PALEVEL, RF_PALEVEL_PA0_ON | RF_PALEVEL_PA1_OFF | RF_PALEVEL_PA2_OFF | (dbm > 13 ? 13 : (dbm + 18)) ); //RegOutputPower max: 31, min: 0; formula: Pout = -18 + Reg_OutputPower
+      break;                                                                                                              // Pout: -18 to +13 dBm   (and its on the wrong pin (RFIO) instead of being on PA_BOOST pin, becoming useless?)
+    case PA_MODE_PA1:
+      writeReg(REG_PALEVEL, RF_PALEVEL_PA0_OFF | RF_PALEVEL_PA1_ON | RF_PALEVEL_PA2_OFF | (dbm > 13 ? 13 : (dbm + 18)) ); //RegOutputPower max: 31, min: 0; formula: Pout = -18 + Reg_OutputPower
+      break;                                                                                                              // Pout: -2 to +13 dBm
+    case PA_MODE_PA1_PA2:
+      writeReg(REG_PALEVEL, RF_PALEVEL_PA0_OFF | RF_PALEVEL_PA1_ON | RF_PALEVEL_PA2_ON  | (dbm > 17 ? 17 : (dbm + 14)) ); //RegOutputPower max: 31, min: 0; formula: Pout = -14 + Reg_OutputPower
+      break;                                                                                                              // Pout: +2 to +17 dBm
+    case PA_MODE_PA1_PA2_20dbm:
+      writeReg(REG_TESTPA1, 0x5D); //highest power test regs (allows absolute maximum of +20dbm output power)
+      writeReg(REG_TESTPA2, 0x7C);
+      writeReg(REG_PALEVEL, RF_PALEVEL_PA0_OFF | RF_PALEVEL_PA1_ON | RF_PALEVEL_PA2_ON  | (dbm > 20 ? 20 : (dbm + 11)) ); //RegOutputPower max: 31, min: 0; formula: Pout = -11 + Reg_OutputPower
+      break;                                                                                                              // Pout: +5 to +20 dBm
+  }
+  writeReg(REG_OCP, OCP ? RF_OCP_ON : RF_OCP_OFF); //OCP_ON = 1, OCP_OFF = 0 (over current protection enable/disable using these defines)
+  //note: highest power test regs must be turned off during receive mode, also OCP must be turned on during receive mode.
+}
 
 bool RFM69LPL::poll(){
   // Poll for OOK signal
@@ -139,11 +158,12 @@ void RFM69LPL::setMode(byte newMode){
     switch (newMode) {
         case RF69OOK_MODE_TX:
             writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_TRANSMITTER);
-      if (_isRFM69HW) setHighPowerRegs(true);
             break;
         case RF69OOK_MODE_RX:
             writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_RECEIVER);
-      if (_isRFM69HW) setHighPowerRegs(false);
+            writeReg(REG_TESTPA1, 0x55); //deactivate transmitter high power regs is necessary for receiving
+            writeReg(REG_TESTPA2, 0x70);
+            writeReg(REG_OCP, RF_OCP_ON); //OCP is necessary for receiving
             break;
         case RF69OOK_MODE_SYNTH:
             writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_SYNTHESIZER);

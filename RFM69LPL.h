@@ -14,6 +14,14 @@
 #define MOD_OOK 1 //on off keying modulation
 #define MOD_FSK 2 //frequency shit keying modulation
 
+#define PA_MODE_PA0 1
+#define PA_MODE_PA1 2
+#define PA_MODE_PA1_PA2 3
+#define PA_MODE_PA1_PA2_20dbm 4
+
+#define OCP_ON 1
+#define OCP_OFF 0
+
 #define null                  0
 #define COURSE_TEMP_COEF    -90 // puts the temperature reading in the ballpark, user can fine tune the returned value
 #define RF69OOK_FSTEP 61.03515625 // == FXOSC/2^19 = 32mhz/2^19 (p13 in DS)
@@ -32,6 +40,7 @@ class RFM69LPL {
     }
 
     bool initialize();
+    void initializeTransmit(byte dbm, int PA_modes, int OCP = 1);
     uint32_t getFrequency();
     void setFrequency(uint32_t freqHz);
     void setFrequencyMHz(float f);
