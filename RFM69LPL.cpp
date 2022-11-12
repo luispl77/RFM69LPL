@@ -14,7 +14,7 @@ bool RFM69LPL::initialize(){
     /* 0x03 */ { REG_BITRATEMSB, 0x03}, // bitrate: 32768 Hz
     /* 0x04 */ { REG_BITRATELSB, 0xD1},
     /* 0x19 */ { REG_RXBW, RF_RXBW_DCCFREQ_010 | RF_RXBW_MANT_24 | RF_RXBW_EXP_4}, // BW: 10.4 kHz
-    /* 0x1B */ { REG_OOKPEAK, RF_OOKPEAK_THRESHTYPE_PEAK | RF_OOKPEAK_PEAKTHRESHSTEP_000 | RF_OOKPEAK_PEAKTHRESHDEC_000 },
+    /* 0x1B */ { REG_OOKPEAK, RF_OOKPEAK_THRESHTYPE_FIXED | RF_OOKPEAK_PEAKTHRESHSTEP_000 | RF_OOKPEAK_PEAKTHRESHDEC_000 },
     /* 0x1D */ { REG_OOKFIX, 6 }, // Fixed threshold value (in dB) in the OOK demodulator
     /* 0x29 */ { REG_RSSITHRESH, 140 }, // RSSI threshold in dBm = -(REG_RSSITHRESH / 2)
     /* 0x6F */ { REG_TESTDAGC, RF_DAGC_IMPROVED_LOWBETA0 }, // run DAGC continuously in RX mode, recommended default for AfcLowBetaOn=0
@@ -40,6 +40,7 @@ bool RFM69LPL::initialize(){
 }
 
 void RFM69LPL::initializeTransmit(byte dbm, int PA_modes, int OCP) { //keep a minimum of -11 dbm to avoid writing negative values into the palevel reg.
+  pinMode(_interruptPin, OUTPUT);
   setMode(RF69OOK_MODE_TX); //put in transmit mode
   switch(PA_modes){
     case PA_MODE_PA0:
