@@ -18,6 +18,7 @@ bool RFM69LPL::initialize(){
     /* 0x1D */ { REG_OOKFIX, 6 }, // Fixed threshold value (in dB) in the OOK demodulator
     /* 0x29 */ { REG_RSSITHRESH, 140 }, // RSSI threshold in dBm = -(REG_RSSITHRESH / 2)
     /* 0x6F */ { REG_TESTDAGC, RF_DAGC_IMPROVED_LOWBETA0 }, // run DAGC continuously in RX mode, recommended default for AfcLowBetaOn=0
+               { REG_LNA, RF_LNA_ZIN_50 },
     {255, 0}
   };
 
@@ -60,6 +61,14 @@ void RFM69LPL::initializeTransmit(byte dbm, int PA_modes, int OCP) { //keep a mi
   }
   writeReg(REG_OCP, OCP ? RF_OCP_ON : RF_OCP_OFF); //OCP_ON = 1, OCP_OFF = 0 (over current protection enable/disable using these defines)
   //note: highest power test regs must be turned off during receive mode, also OCP must be turned on during receive mode.
+}
+
+void RFM69LPL::initializeReceive(){ 
+  pinMode(_interruptPin, INPUT);
+  setBandwidth(OOK_BW_100_0);
+  setFixedThreshold(10); 
+  setFrequencyMHz(433.92);
+  setMode(RF69OOK_MODE_RX); //put in receive mode
 }
 
 bool RFM69LPL::poll(){

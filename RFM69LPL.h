@@ -41,6 +41,7 @@ class RFM69LPL {
 
     bool initialize();
     void initializeTransmit(byte dbm, int PA_modes, int OCP = 1);
+    void initializeReceive();
     uint32_t getFrequency();
     void setFrequency(uint32_t freqHz);
     void setFrequencyMHz(float f);
