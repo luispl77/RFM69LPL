@@ -75,6 +75,9 @@ class RFM69LPL {
     void select();
     void unselect();
 
+    void setMode(byte mode);
+    void setHighPowerRegs(bool onOff);
+
   protected:
     static RFM69LPL* selfPointer;
     byte _slaveSelectPin;
@@ -82,8 +85,7 @@ class RFM69LPL {
     byte _powerLevel;
     bool _isRFM69HW;
 
-    void setMode(byte mode);
-    void setHighPowerRegs(bool onOff);
+    
 
 };
 
