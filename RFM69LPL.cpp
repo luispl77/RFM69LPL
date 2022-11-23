@@ -18,7 +18,7 @@ bool RFM69LPL::initialize(){
     /* 0x1D */ { REG_OOKFIX, 6 }, // Fixed threshold value (in dB) in the OOK demodulator
     /* 0x29 */ { REG_RSSITHRESH, 255 }, // RSSI threshold in dBm = -(REG_RSSITHRESH / 2)
     /* 0x6F */ { REG_TESTDAGC, RF_DAGC_IMPROVED_LOWBETA0 }, // run DAGC continuously in RX mode, recommended default for AfcLowBetaOn=0
-               { REG_LNA, RF_LNA_ZIN_50 }, // 50 ohm antena impedance
+               { REG_LNA, RF_LNA_ZIN_50 | RF_LNA_GAINSELECT_MAXMINUS6}, // 50 ohm antena impedance
     {255, 0}
   };
 
@@ -35,6 +35,8 @@ bool RFM69LPL::initialize(){
   Serial.print("Waiting for flag MODE_READY...");
   while ((readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00); // Wait for ModeReady
   Serial.println(" ready."); 
+  Serial.println(readReg(REG_LNA)); 
+  
 
   selfPointer = this;
   return true;
