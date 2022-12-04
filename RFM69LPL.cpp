@@ -18,7 +18,7 @@ bool RFM69LPL::initialize(){
     /* 0x1D */ { REG_OOKFIX, 6 }, // Fixed threshold value (in dB) in the OOK demodulator
     /* 0x29 */ { REG_RSSITHRESH, 255 }, // RSSI threshold in dBm = -(REG_RSSITHRESH / 2)
     /* 0x6F */ { REG_TESTDAGC, RF_DAGC_IMPROVED_LOWBETA0 }, // run DAGC continuously in RX mode, recommended default for AfcLowBetaOn=0
-               { REG_LNA, RF_LNA_ZIN_50 | RF_LNA_GAINSELECT_MAXMINUS6}, // 50 ohm antena impedance
+               { REG_LNA, RF_LNA_ZIN_50 | RF_LNA_GAINSELECT_MAX}, // 50 ohm antena impedance
     {255, 0}
   };
 
@@ -26,7 +26,7 @@ bool RFM69LPL::initialize(){
   SPI.begin();
   SPI.setClockDivider(SPI_CLOCK_DIV4);
 
-  Serial.begin(115200); Serial.println();
+  //Serial.begin(115200); Serial.println();
 
   for (byte i = 0; CONFIG[i][0] != 255; i++) //write regs
     writeReg(CONFIG[i][0], CONFIG[i][1]);
@@ -47,18 +47,18 @@ void RFM69LPL::initializeTransmit(byte dbm, int PA_modes, int OCP) { //keep a mi
   setMode(RF69OOK_MODE_TX); //put in transmit mode
   switch(PA_modes){
     case PA_MODE_PA0:
-      writeReg(REG_PALEVEL, RF_PALEVEL_PA0_ON | RF_PALEVEL_PA1_OFF | RF_PALEVEL_PA2_OFF | (dbm > 13 ? 13 : (dbm + 18)) ); //RegOutputPower max: 31, min: 0; formula: Pout = -18 + Reg_OutputPower
+      writeReg(REG_PALEVEL, RF_PALEVEL_PA0_ON | RF_PALEVEL_PA1_OFF | RF_PALEVEL_PA2_OFF | (dbm > 13 ? 31 : (dbm + 18)) ); //RegOutputPower max: 31, min: 0; formula: Pout = -18 + Reg_OutputPower
       break;                                                                                                              // Pout: -18 to +13 dBm   (and its on the wrong pin (RFIO) instead of being on PA_BOOST pin, becoming useless?)
     case PA_MODE_PA1:
-      writeReg(REG_PALEVEL, RF_PALEVEL_PA0_OFF | RF_PALEVEL_PA1_ON | RF_PALEVEL_PA2_OFF | (dbm > 13 ? 13 : (dbm + 18)) ); //RegOutputPower max: 31, min: 0; formula: Pout = -18 + Reg_OutputPower
+      writeReg(REG_PALEVEL, RF_PALEVEL_PA0_OFF | RF_PALEVEL_PA1_ON | RF_PALEVEL_PA2_OFF | (dbm > 13 ? 31 : (dbm + 18)) ); //RegOutputPower max: 31, min: 0; formula: Pout = -18 + Reg_OutputPower
       break;                                                                                                              // Pout: -2 to +13 dBm
     case PA_MODE_PA1_PA2:
-      writeReg(REG_PALEVEL, RF_PALEVEL_PA0_OFF | RF_PALEVEL_PA1_ON | RF_PALEVEL_PA2_ON  | (dbm > 17 ? 17 : (dbm + 14)) ); //RegOutputPower max: 31, min: 0; formula: Pout = -14 + Reg_OutputPower
+      writeReg(REG_PALEVEL, RF_PALEVEL_PA0_OFF | RF_PALEVEL_PA1_ON | RF_PALEVEL_PA2_ON  | (dbm > 17 ? 31 : (dbm + 14)) ); //RegOutputPower max: 31, min: 0; formula: Pout = -14 + Reg_OutputPower
       break;                                                                                                              // Pout: +2 to +17 dBm
     case PA_MODE_PA1_PA2_20dbm:
       writeReg(REG_TESTPA1, 0x5D); //highest power test regs (allows absolute maximum of +20dbm output power)
       writeReg(REG_TESTPA2, 0x7C);
-      writeReg(REG_PALEVEL, RF_PALEVEL_PA0_OFF | RF_PALEVEL_PA1_ON | RF_PALEVEL_PA2_ON  | (dbm > 20 ? 20 : (dbm + 11)) ); //RegOutputPower max: 31, min: 0; formula: Pout = -11 + Reg_OutputPower
+      writeReg(REG_PALEVEL, RF_PALEVEL_PA0_OFF | RF_PALEVEL_PA1_ON | RF_PALEVEL_PA2_ON  | (dbm > 20 ? 31 : (dbm + 11)) ); //RegOutputPower max: 31, min: 0; formula: Pout = -11 + Reg_OutputPower
       break;                                                                                                              // Pout: +5 to +20 dBm
   }
   writeReg(REG_OCP, OCP ? RF_OCP_ON : RF_OCP_OFF); //OCP_ON = 1, OCP_OFF = 0 (over current protection enable/disable using these defines)
@@ -68,7 +68,7 @@ void RFM69LPL::initializeTransmit(byte dbm, int PA_modes, int OCP) { //keep a mi
 void RFM69LPL::initializeReceive(){ 
   pinMode(_interruptPin, INPUT);
   setBandwidth(OOK_BW_100_0);
-  setFixedThreshold(15); 
+  setFixedThreshold(5); 
   setFrequencyMHz(433.92);
   setMode(RF69OOK_MODE_RX); //put in receive mode
 }
