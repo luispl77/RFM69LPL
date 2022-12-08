@@ -225,6 +225,11 @@ byte RFM69LPL::readReg(byte addr){
   return regval;
 }
 
+void RFM69LPL::setFrequencyDev(uint32_t deviation){
+  writeReg(REG_FDEVMSB, (deviation/61) >> 8);
+  writeReg(REG_FDEVLSB, (deviation/61));
+}
+
 void RFM69LPL::writeReg(byte addr, byte value){
   select();
   SPI.transfer(addr | 0x80);
