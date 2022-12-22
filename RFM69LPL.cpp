@@ -13,9 +13,9 @@ bool RFM69LPL::initialize(){
     /* 0x02 */ { REG_DATAMODUL, RF_DATAMODUL_DATAMODE_CONTINUOUSNOBSYNC | RF_DATAMODUL_MODULATIONTYPE_OOK | RF_DATAMODUL_MODULATIONSHAPING_00 }, // no shaping
     /* 0x03 */ { REG_BITRATEMSB, 0x03}, // bitrate: 32768 Hz
     /* 0x04 */ { REG_BITRATELSB, 0xD1},
-    /* 0x19 */ { REG_RXBW, RF_RXBW_DCCFREQ_010 | RF_RXBW_MANT_24 | RF_RXBW_EXP_4}, // BW: 10.4 kHz
+    /* 0x19 */ { REG_RXBW, RF_RXBW_DCCFREQ_010 | OOK_BW_100_0}, // BW: 100.0 kHz
     /* 0x1B */ { REG_OOKPEAK, RF_OOKPEAK_THRESHTYPE_PEAK | RF_OOKPEAK_PEAKTHRESHSTEP_000 | RF_OOKPEAK_PEAKTHRESHDEC_000 },
-    /* 0x1D */ { REG_OOKFIX, 6 }, // Fixed threshold value (in dB) in the OOK demodulator
+    /* 0x1D */ { REG_OOKFIX, 10 }, // Fixed threshold value (in dB) in the OOK demodulator
     /* 0x29 */ { REG_RSSITHRESH, 255 }, // RSSI threshold in dBm = -(REG_RSSITHRESH / 2)
     /* 0x6F */ { REG_TESTDAGC, RF_DAGC_IMPROVED_LOWBETA0 }, // run DAGC continuously in RX mode, recommended default for AfcLowBetaOn=0
                { REG_LNA, RF_LNA_ZIN_50 | RF_LNA_GAINSELECT_MAX}, // 50 ohm antena impedance
@@ -35,8 +35,7 @@ bool RFM69LPL::initialize(){
   Serial.print("Waiting for flag MODE_READY...");
   while ((readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00); // Wait for ModeReady
   Serial.println(" ready."); 
-  Serial.println(readReg(REG_LNA)); 
-  
+  initializeReceive();
 
   selfPointer = this;
   return true;
@@ -68,7 +67,7 @@ void RFM69LPL::initializeTransmit(byte dbm, int PA_modes, int OCP) { //keep a mi
 void RFM69LPL::initializeReceive(){ 
   pinMode(_interruptPin, INPUT);
   setBandwidth(OOK_BW_100_0);
-  setFixedThreshold(5); 
+  setFixedThreshold(10); 
   setFrequencyMHz(433.92);
   setMode(RF69OOK_MODE_RX); //put in receive mode
 }
