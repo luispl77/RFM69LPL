@@ -31,26 +31,32 @@ class RFM69LPL {
     static volatile int RSSI; //most accurate RSSI during reception (closest to the reception)
     static volatile byte _mode; //should be protected?
 
-    RFM69LPL(byte slaveSelectPin, byte interruptPin, bool isRFM69HW=true) {
+    RFM69LPL(byte slaveSelectPin, byte interruptPin, bool isReceiver=true) {
       _slaveSelectPin = slaveSelectPin;
       _interruptPin = interruptPin;
       _mode = RF69OOK_MODE_STANDBY;
       _powerLevel = 31;
-      _isRFM69HW = isRFM69HW;
+	  _fixed_threshold = 10; //10 dbs by default
+	  _bandwidth = 0x09; //100khz by default
+	  _frequency = 433.920; //ISM freq by default
+	  _thresh_type_fixed = false;
+	  _isReceiver = isReceiver;
+	  _rssi_threshold = 255;
+	  _lna_gain = 0x01; //MAX gain
     }
 
     bool initialize();
     void initializeTransmit(byte dbm, int PA_modes, int OCP = 1);
     void initializeReceive();
     uint32_t getFrequency();
+	void threshTypeFixed(bool fixed);
+	void setLNAGain(byte lna_gain);
     void setFrequency(uint32_t freqHz);
     void setFrequencyMHz(float f);
     void setFrequencyDev(uint32_t deviation);
     void setModulationType(uint8_t mod);
     void setCS(byte newSPISlaveSelect);
     int8_t readRSSI(bool forceTrigger=false);
-    void setHighPower(bool onOFF=true); //have to call it after initialize for RFM69HW
-    void setPowerLevel(byte level); //reduce/increase transmit power level
     void sleep();
     byte readTemperature(byte calFactor=0); //get CMOS temperature (8bit)
     void rcCalibration(); //calibrate the internal RC oscillator for use in wide temperature variations - see datasheet section [4.3.5. RC Timer Accuracy]
@@ -68,8 +74,8 @@ class RFM69LPL {
     bool poll();
     void send(bool signal);
 	  void setBandwidth(uint8_t bw);
-    void setBitrate(uint32_t bitrate);
-	  void setRSSIThreshold(int8_t rssi);
+
+	  void setRSSIThreshold(uint8_t rssi);
 	  void setFixedThreshold(uint8_t threshold);
 	  void setSensitivityBoost(uint8_t value);
 
@@ -84,6 +90,14 @@ class RFM69LPL {
     byte _slaveSelectPin;
     byte _interruptPin;
     byte _powerLevel;
+	byte _fixed_threshold;
+	uint8_t _rssi_threshold;
+	byte _bandwidth;
+	byte _lna_gain;
+	bool _thresh_type_fixed;
+	bool _isReceiver;
+	float _frequency;
+	
     bool _isRFM69HW;
 
     

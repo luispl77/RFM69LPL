@@ -4,42 +4,20 @@
 
 volatile byte RFM69LPL::_mode;  // current transceiver state
 volatile int RFM69LPL::RSSI; 	// most accurate RSSI during reception (closest to the reception)
-RFM69LPL* RFM69LPL::selfPointer;
 
-bool RFM69LPL::initialize(){
-  const byte CONFIG[][2] =
-  {
-    /* 0x01 */ { REG_OPMODE, RF_OPMODE_SEQUENCER_OFF | RF_OPMODE_LISTEN_OFF | RF_OPMODE_STANDBY },
-    /* 0x02 */ { REG_DATAMODUL, RF_DATAMODUL_DATAMODE_CONTINUOUSNOBSYNC | RF_DATAMODUL_MODULATIONTYPE_OOK | RF_DATAMODUL_MODULATIONSHAPING_00 }, // no shaping
-    /* 0x03 */ { REG_BITRATEMSB, 0x03}, // bitrate: 32768 Hz
-    /* 0x04 */ { REG_BITRATELSB, 0xD1},
-    /* 0x19 */ { REG_RXBW, RF_RXBW_DCCFREQ_010 | OOK_BW_100_0}, // BW: 100.0 kHz
-    /* 0x1B */ { REG_OOKPEAK, RF_OOKPEAK_THRESHTYPE_PEAK | RF_OOKPEAK_PEAKTHRESHSTEP_000 | RF_OOKPEAK_PEAKTHRESHDEC_000 },
-    /* 0x1D */ { REG_OOKFIX, 10 }, // Fixed threshold value (in dB) in the OOK demodulator
-    /* 0x29 */ { REG_RSSITHRESH, 255 }, // RSSI threshold in dBm = -(REG_RSSITHRESH / 2)
-    /* 0x6F */ { REG_TESTDAGC, RF_DAGC_IMPROVED_LOWBETA0 }, // run DAGC continuously in RX mode, recommended default for AfcLowBetaOn=0
-               { REG_LNA, RF_LNA_ZIN_50 | RF_LNA_GAINSELECT_MAX}, // 50 ohm antena impedance
-    {255, 0}
-  };
 
-  pinMode(_slaveSelectPin, OUTPUT);
-  SPI.begin();
-  SPI.setClockDivider(SPI_CLOCK_DIV4);
 
-  //Serial.begin(115200); Serial.println();
-
-  for (byte i = 0; CONFIG[i][0] != 255; i++) //write regs
-    writeReg(CONFIG[i][0], CONFIG[i][1]);
-
-  setMode(RF69OOK_MODE_STANDBY);
-  Serial.print("Waiting for flag MODE_READY...");
-  while ((readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00); // Wait for ModeReady
-  Serial.println(" ready."); 
-  initializeReceive();
-
-  selfPointer = this;
-  return true;
+void RFM69LPL::threshTypeFixed(bool fixed){
+	if(fixed){
+		writeReg(REG_OOKPEAK, RF_OOKPEAK_THRESHTYPE_FIXED | RF_OOKPEAK_PEAKTHRESHSTEP_000 | RF_OOKPEAK_PEAKTHRESHDEC_000);
+	}
+	else{
+		writeReg(REG_OOKPEAK, RF_OOKPEAK_THRESHTYPE_PEAK | RF_OOKPEAK_PEAKTHRESHSTEP_000 | RF_OOKPEAK_PEAKTHRESHDEC_000);
+	}
 }
+
+
+
 
 void RFM69LPL::initializeTransmit(byte dbm, int PA_modes, int OCP) { //keep a minimum of -11 dbm to avoid writing negative values into the palevel reg.
   pinMode(_interruptPin, OUTPUT);
@@ -65,10 +43,18 @@ void RFM69LPL::initializeTransmit(byte dbm, int PA_modes, int OCP) { //keep a mi
 }
 
 void RFM69LPL::initializeReceive(){ 
+
+
   pinMode(_interruptPin, INPUT);
-  setBandwidth(OOK_BW_100_0);
-  setFixedThreshold(10); 
-  setFrequencyMHz(433.92);
+  
+  setBandwidth(_bandwidth);
+  setFixedThreshold(_fixed_threshold); 
+  setFrequencyMHz(_frequency);
+  threshTypeFixed(_thresh_type_fixed);
+  setRSSIThreshold(_rssi_threshold);
+  setLNAGain(_lna_gain);
+  setModulationType(MOD_OOK);
+
   setMode(RF69OOK_MODE_RX); //put in receive mode
 }
 
@@ -116,7 +102,7 @@ void RFM69LPL::setFrequencyMHz(float f){
 }
 
 void RFM69LPL::setModulationType(uint8_t mod){
-  // Set literal frequency using floating point MHz value
+  // 
   if(mod == MOD_OOK){
     writeReg(REG_DATAMODUL, RF_DATAMODUL_DATAMODE_CONTINUOUSNOBSYNC | RF_DATAMODUL_MODULATIONTYPE_OOK | RF_DATAMODUL_MODULATIONSHAPING_00);
   }
@@ -134,22 +120,21 @@ void RFM69LPL::setFrequency(uint32_t freqHz){
   writeReg(REG_FRFLSB, freqHz);
 }
 
-void RFM69LPL::setBitrate(uint32_t bitrate){
-  // Set bitrate
-  bitrate = 32000000 / bitrate; // 32M = XCO freq.
-  writeReg(REG_BITRATEMSB, bitrate >> 8);
-  writeReg(REG_BITRATELSB, bitrate);
+void RFM69LPL::setLNAGain(byte lna_gain){
+	writeReg(REG_LNA, RF_LNA_ZIN_50 | lna_gain);
 }
-
 
 void RFM69LPL::setBandwidth(uint8_t bw){
   // set OOK/FSK bandwidth
   writeReg(REG_RXBW, readReg(REG_RXBW) & 0xE0 | bw);
+  _bandwidth = bw;
 }
 
-void RFM69LPL::setRSSIThreshold(int8_t rssi){
+void RFM69LPL::setRSSIThreshold(uint8_t rssi){ // RSSI threshold in dBm = -(REG_RSSITHRESH / 2)
   // set RSSI threshold
-  writeReg(REG_RSSITHRESH, (-rssi << 1));
+  //writeReg(REG_RSSITHRESH, (-rssi << 1));
+  writeReg(REG_RSSITHRESH, rssi);
+  _rssi_threshold = rssi;
 }
 
 void RFM69LPL::setFixedThreshold(uint8_t threshold){
@@ -199,13 +184,6 @@ void RFM69LPL::sleep() {
   setMode(RF69OOK_MODE_SLEEP);
 }
 
-void RFM69LPL::setPowerLevel(byte powerLevel){
-  // set output power: 0=min, 31=max
-  // this results in a "weaker" transmitted signal, and directly results in a lower RSSI at the receiver
-  _powerLevel = powerLevel;
-  writeReg(REG_PALEVEL, (readReg(REG_PALEVEL) & 0xE0) | (_powerLevel > 31 ? 31 : _powerLevel));
-}
-
 int8_t RFM69LPL::readRSSI(bool forceTrigger) {
   if (forceTrigger)
   {
@@ -217,6 +195,8 @@ int8_t RFM69LPL::readRSSI(bool forceTrigger) {
 }
 
 byte RFM69LPL::readReg(byte addr){
+  if(_isReceiver) digitalWrite(5, HIGH); //pull transmitter high to avoid interference with receiver SPI
+  else digitalWrite(4, HIGH); //pull receiver high to avoid interference with transmitter SPI
   select();
   SPI.transfer(addr & 0x7F);
   byte regval = SPI.transfer(0);
@@ -230,6 +210,8 @@ void RFM69LPL::setFrequencyDev(uint32_t deviation){
 }
 
 void RFM69LPL::writeReg(byte addr, byte value){
+  if(_isReceiver) digitalWrite(5, HIGH); //pull transmitter high to avoid interference with receiver SPI
+  else digitalWrite(4, HIGH); //pull receiver high to avoid interference with transmitter SPI
   select();
   SPI.transfer(addr | 0x80);
   SPI.transfer(value);
@@ -248,15 +230,6 @@ void RFM69LPL::select() {
 void RFM69LPL::unselect() {
   // UNselect the transceiver chip
   digitalWrite(_slaveSelectPin, HIGH);
-}
-
-void RFM69LPL::setHighPower(bool onOff) {
-  _isRFM69HW = onOff;
-  writeReg(REG_OCP, _isRFM69HW ? RF_OCP_OFF : RF_OCP_ON);
-  if (_isRFM69HW) // turning ON
-    writeReg(REG_PALEVEL, (readReg(REG_PALEVEL) & 0x1F) | RF_PALEVEL_PA1_ON | RF_PALEVEL_PA2_ON); // enable P1 & P2 amplifier stages
-  else
-    writeReg(REG_PALEVEL, RF_PALEVEL_PA0_ON | RF_PALEVEL_PA1_OFF | RF_PALEVEL_PA2_OFF | _powerLevel); // enable P0 only
 }
 
 void RFM69LPL::setHighPowerRegs(bool onOff) {
