@@ -16,10 +16,7 @@ void RFM69LPL::threshTypeFixed(bool fixed){
 	}
 }
 
-
-
-
-void RFM69LPL::initializeTransmit(byte dbm, int PA_modes, int OCP) { //keep a minimum of -11 dbm to avoid writing negative values into the palevel reg.
+void RFM69LPL::setTransmitPower(byte dbm, int PA_modes, int OCP) { //keep a minimum of -11 dbm to avoid writing negative values into the palevel reg.
   pinMode(_interruptPin, OUTPUT);
   setMode(RF69OOK_MODE_TX); //put in transmit mode
   switch(PA_modes){
@@ -40,11 +37,12 @@ void RFM69LPL::initializeTransmit(byte dbm, int PA_modes, int OCP) { //keep a mi
   }
   writeReg(REG_OCP, OCP ? RF_OCP_ON : RF_OCP_OFF); //OCP_ON = 1, OCP_OFF = 0 (over current protection enable/disable using these defines)
   //note: highest power test regs must be turned off during receive mode, also OCP must be turned on during receive mode.
+  _dbm = dbm;
+  _pa_mode = PA_modes;
+  _ocp = OCP;
 }
 
 void RFM69LPL::initializeReceive(){ 
-
-
   pinMode(_interruptPin, INPUT);
   
   setBandwidth(_bandwidth);
@@ -58,6 +56,16 @@ void RFM69LPL::initializeReceive(){
   setMode(RF69OOK_MODE_RX); //put in receive mode
 }
 
+void RFM69LPL::initializeTransmit(){ 
+  pinMode(_interruptPin, OUTPUT);
+  
+  setFrequencyMHz(_frequency);
+  setTransmitPower(_dbm, _pa_mode, _ocp);
+  setModulationType(_modulation);
+  
+  setMode(RF69OOK_MODE_TX); //put in transmit mode
+}
+
 bool RFM69LPL::poll(){
   // Poll for OOK signal
   return digitalRead(_interruptPin);
@@ -68,25 +76,7 @@ void RFM69LPL::send(bool signal){
   digitalWrite(_interruptPin, signal);
 }
 
-void RFM69LPL::transmitBegin(){
-  // Turn the radio into transmission mode
-  setMode(RF69OOK_MODE_TX);
-  pinMode(_interruptPin, OUTPUT);
-}
-
-void RFM69LPL::transmitEnd(){
-  // Turn the radio back to standby
-  pinMode(_interruptPin, INPUT);
-  setMode(RF69OOK_MODE_STANDBY);
-}
-
-void RFM69LPL::receiveBegin(){
-  // Turn the radio into OOK listening mode
-  pinMode(_interruptPin, INPUT);
-  setMode(RF69OOK_MODE_RX);
-}
-
-void RFM69LPL::receiveEnd(){
+void RFM69LPL::standby(){
   // Turn the radio back to standby
   setMode(RF69OOK_MODE_STANDBY);
 }
@@ -179,11 +169,6 @@ void RFM69LPL::setMode(byte newMode){
     _mode = newMode;
 }
 
-void RFM69LPL::sleep() {
-  //power saving sleep mode
-  setMode(RF69OOK_MODE_SLEEP);
-}
-
 int8_t RFM69LPL::readRSSI(bool forceTrigger) {
   if (forceTrigger)
   {
@@ -232,12 +217,6 @@ void RFM69LPL::unselect() {
   digitalWrite(_slaveSelectPin, HIGH);
 }
 
-void RFM69LPL::setHighPowerRegs(bool onOff) {
-  //PA regs
-  writeReg(REG_TESTPA1, onOff ? 0x5D : 0x55);
-  writeReg(REG_TESTPA2, onOff ? 0x7C : 0x70);
-}
-
 void RFM69LPL::readAllRegs(){
   // for debugging
   byte regVal;
@@ -249,18 +228,4 @@ void RFM69LPL::readAllRegs(){
     Serial.print(" - ");
     Serial.println(regVal,BIN);
   }
-}
-
-byte RFM69LPL::readTemperature(byte calFactor){
-  // returns centigrade
-  setMode(RF69OOK_MODE_STANDBY);
-  writeReg(REG_TEMP1, RF_TEMP1_MEAS_START);
-  while ((readReg(REG_TEMP1) & RF_TEMP1_MEAS_RUNNING));
-  return ~readReg(REG_TEMP2) + COURSE_TEMP_COEF + calFactor; // 'complement' corrects the slope, rising temp = rising val
-}                                                            // COURSE_TEMP_COEF puts reading in the ballpark, user can add additional correction
-
-void RFM69LPL::rcCalibration(){
-  //RC calibration mode
-  writeReg(REG_OSC1, RF_OSC1_RCCAL_START);
-  while ((readReg(REG_OSC1) & RF_OSC1_RCCAL_DONE) == 0x00);
 }

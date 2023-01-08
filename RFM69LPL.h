@@ -1,6 +1,7 @@
 #ifndef RFM69LPL_h
 #define RFM69LPL_h
 #include <Arduino.h>            //assumes Arduino IDE v1.0 or greater
+#include <RFM69LPLregisters.h>
 
 #define RF69OOK_SPI_CS  SS // SS is the SPI slave select pin, for instance D10 on atmega328
 
@@ -35,70 +36,69 @@ class RFM69LPL {
       _slaveSelectPin = slaveSelectPin;
       _interruptPin = interruptPin;
       _mode = RF69OOK_MODE_STANDBY;
-      _powerLevel = 31;
+      _dbm = 10;
 	  _fixed_threshold = 10; //10 dbs by default
-	  _bandwidth = 0x09; //100khz by default
+	  _bandwidth = OOK_BW_100_0; //100khz by default
 	  _frequency = 433.920; //ISM freq by default
 	  _thresh_type_fixed = false;
 	  _isReceiver = isReceiver;
 	  _rssi_threshold = 255;
-	  _lna_gain = 0x01; //MAX gain
-    }
+	  _lna_gain = RF_LNA_GAINSELECT_MAX; //MAX gain
+	  _pa_mode = PA_MODE_PA1_PA2_20dbm;
+	  _ocp = OCP_OFF;
+	  _modulation = MOD_OOK;
+	  }
 
-    bool initialize();
-    void initializeTransmit(byte dbm, int PA_modes, int OCP = 1);
-    void initializeReceive();
-    uint32_t getFrequency();
-	void threshTypeFixed(bool fixed);
-	void setLNAGain(byte lna_gain);
-    void setFrequency(uint32_t freqHz);
+	//common functions
+	void setFrequency(uint32_t freqHz);
     void setFrequencyMHz(float f);
     void setFrequencyDev(uint32_t deviation);
     void setModulationType(uint8_t mod);
-    void setCS(byte newSPISlaveSelect);
-    int8_t readRSSI(bool forceTrigger=false);
-    void sleep();
-    byte readTemperature(byte calFactor=0); //get CMOS temperature (8bit)
-    void rcCalibration(); //calibrate the internal RC oscillator for use in wide temperature variations - see datasheet section [4.3.5. RC Timer Accuracy]
+	uint32_t getFrequency();
+	void standby(); //puts rfm in standby mode
+	void setMode(byte mode);
+	
 
+	//transmitter functions
+    void initializeTransmit();
+	void setTransmitPower(byte dbm, int PA_modes, int OCP); //also puts in TX mode
+	void send(bool signal);
+	
+	
+	//receiver functions
+    void initializeReceive();
+	void threshTypeFixed(bool fixed);
+	void setLNAGain(byte lna_gain);
+    int8_t readRSSI(bool forceTrigger=false);
+	void setBandwidth(uint8_t bw);
+	void setRSSIThreshold(uint8_t rssi);
+	void setFixedThreshold(uint8_t threshold);
+	void setSensitivityBoost(uint8_t value);
+	bool poll();
+	
+	
     // allow hacking registers by making these public
     byte readReg(byte addr);
     void writeReg(byte addr, byte val);
     void readAllRegs();
-
-    // functions related to OOK mode
-    void receiveBegin();
-    void receiveEnd();
-    void transmitBegin();
-    void transmitEnd();
-    bool poll();
-    void send(bool signal);
-	  void setBandwidth(uint8_t bw);
-
-	  void setRSSIThreshold(uint8_t rssi);
-	  void setFixedThreshold(uint8_t threshold);
-	  void setSensitivityBoost(uint8_t value);
-
     void select();
     void unselect();
-
-    void setMode(byte mode);
-    void setHighPowerRegs(bool onOff);
+    
 
   protected:
-    static RFM69LPL* selfPointer;
     byte _slaveSelectPin;
     byte _interruptPin;
-    byte _powerLevel;
+    byte _dbm;
 	byte _fixed_threshold;
 	uint8_t _rssi_threshold;
 	byte _bandwidth;
 	byte _lna_gain;
+	byte _pa_mode;
+	byte _ocp;
+	byte _modulation;
 	bool _thresh_type_fixed;
 	bool _isReceiver;
 	float _frequency;
-	
-    bool _isRFM69HW;
 
     
 
