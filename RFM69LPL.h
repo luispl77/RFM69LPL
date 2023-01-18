@@ -40,7 +40,7 @@ class RFM69LPL {
 	  _fixed_threshold = 10; //10 dbs by default
 	  _bandwidth = OOK_BW_100_0; //100khz by default
 	  _frequency = 433.920; //ISM freq by default
-	  _thresh_type_fixed = false;
+	  _thresh_type_fixed = true;
 	  _isReceiver = isReceiver;
 	  _rssi_threshold = 255;
 	  _lna_gain = RF_LNA_GAINSELECT_MAX; //MAX gain
@@ -85,7 +85,6 @@ class RFM69LPL {
     void unselect();
     
 
-  protected:
     byte _slaveSelectPin;
     byte _interruptPin;
     byte _dbm;
@@ -99,6 +98,9 @@ class RFM69LPL {
 	bool _thresh_type_fixed;
 	bool _isReceiver;
 	float _frequency;
+	
+	
+  protected:
 
     
 

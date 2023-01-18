@@ -51,7 +51,7 @@ void RFM69LPL::initializeReceive(){
   threshTypeFixed(_thresh_type_fixed);
   setRSSIThreshold(_rssi_threshold);
   setLNAGain(_lna_gain);
-  setModulationType(MOD_OOK);
+  setModulationType(_modulation);
 
   setMode(RF69OOK_MODE_RX); //put in receive mode
 }
