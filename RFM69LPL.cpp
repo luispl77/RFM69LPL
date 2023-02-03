@@ -6,6 +6,39 @@ volatile byte RFM69LPL::_mode;  // current transceiver state
 volatile int RFM69LPL::RSSI; 	// most accurate RSSI during reception (closest to the reception)
 
 
+bool RFM69LPL::initialize(){
+  const byte CONFIG[][2] =
+  {
+    /* 0x01 */ { REG_OPMODE, RF_OPMODE_SEQUENCER_OFF | RF_OPMODE_LISTEN_OFF | RF_OPMODE_STANDBY },
+    /* 0x02 */ { REG_DATAMODUL, RF_DATAMODUL_DATAMODE_CONTINUOUSNOBSYNC | RF_DATAMODUL_MODULATIONTYPE_OOK | RF_DATAMODUL_MODULATIONSHAPING_00 }, // no shaping
+    /* 0x03 */ { REG_BITRATEMSB, 0x03}, // bitrate: 32768 Hz
+    /* 0x04 */ { REG_BITRATELSB, 0xD1},
+    /* 0x19 */ { REG_RXBW, RF_RXBW_DCCFREQ_010 | RF_RXBW_MANT_24 | RF_RXBW_EXP_4}, // BW: 10.4 kHz
+    /* 0x1B */ { REG_OOKPEAK, RF_OOKPEAK_THRESHTYPE_PEAK | RF_OOKPEAK_PEAKTHRESHSTEP_000 | RF_OOKPEAK_PEAKTHRESHDEC_000 },
+    /* 0x1D */ { REG_OOKFIX, 6 }, // Fixed threshold value (in dB) in the OOK demodulator
+    /* 0x29 */ { REG_RSSITHRESH, 140 }, // RSSI threshold in dBm = -(REG_RSSITHRESH / 2)
+    /* 0x6F */ { REG_TESTDAGC, RF_DAGC_IMPROVED_LOWBETA0 }, // run DAGC continuously in RX mode, recommended default for AfcLowBetaOn=0
+    {255, 0}
+  };
+
+  pinMode(_slaveSelectPin, OUTPUT);
+  SPI.begin();
+  SPI.setClockDivider(SPI_CLOCK_DIV4);
+
+  Serial.begin(115200); Serial.println();
+
+  for (byte i = 0; CONFIG[i][0] != 255; i++) //write regs
+    writeReg(CONFIG[i][0], CONFIG[i][1]);
+	
+  setMode(RF69OOK_MODE_STANDBY);
+  Serial.print("Waiting for flag MODE_READY...");
+  while ((readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00); // Wait for ModeReady
+  Serial.println(" ready."); 
+
+
+  return true;
+}
+
 
 void RFM69LPL::threshTypeFixed(bool fixed){
 	if(fixed){
@@ -52,6 +85,7 @@ void RFM69LPL::initializeReceive(){
   setRSSIThreshold(_rssi_threshold);
   setLNAGain(_lna_gain);
   setModulationType(_modulation);
+  
 
   setMode(RF69OOK_MODE_RX); //put in receive mode
 }
