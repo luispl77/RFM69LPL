@@ -5,7 +5,7 @@
 volatile byte RFM69LPL::_mode;  // current transceiver state
 volatile int RFM69LPL::RSSI; 	// most accurate RSSI during reception (closest to the reception)
 
-
+/*
 bool RFM69LPL::initialize(){
   const byte CONFIG[][2] =
   {
@@ -39,6 +39,7 @@ bool RFM69LPL::initialize(){
   return true;
 }
 
+*/
 
 void RFM69LPL::threshTypeFixed(bool fixed){
 	if(fixed){

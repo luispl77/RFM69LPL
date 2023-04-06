@@ -60,7 +60,7 @@ class RFM69LPL {
 	
 
 	//transmitter functions
-	bool initialize();
+	//bool initialize();
     void initializeTransmit();
 	void setTransmitPower(byte dbm, int PA_modes, int OCP); //also puts in TX mode
 	void send(bool signal);
