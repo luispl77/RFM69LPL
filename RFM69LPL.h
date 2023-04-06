@@ -32,79 +32,77 @@ class RFM69LPL {
     static volatile int RSSI; //most accurate RSSI during reception (closest to the reception)
     static volatile byte _mode; //should be protected?
 
-    RFM69LPL(byte slaveSelectPin, byte interruptPin, bool isReceiver=true) {
+    RFM69LPL(byte slaveSelectPin, byte interruptPin) { //constructor for default values
       _slaveSelectPin = slaveSelectPin;
       _interruptPin = interruptPin;
       _mode = RF69OOK_MODE_STANDBY;
-      _dbm = 10;
-	  _fixed_threshold = 10; //10 dbs by default
-	  _bandwidth = OOK_BW_100_0; //100khz by default
-	  _frequency = 433.920; //ISM freq by default
-	  _thresh_type_fixed = true;
-	  _isReceiver = isReceiver;
-	  _rssi_threshold = 255;
-	  _lna_gain = RF_LNA_GAINSELECT_MAX; //MAX gain
-	  _pa_mode = PA_MODE_PA1_PA2_20dbm;
-	  _ocp = OCP_OFF;
-	  _modulation = MOD_OOK;
+      _dbm = 20;
+	  	_fixed_threshold = 50; 
+	  	_bandwidth = OOK_BW_100_0; 
+	  	_frequency = 433.920; 
+	  	_thresh_type_fixed = false;
+	  	_rssi_threshold = 255;
+	  	_lna_gain = RF_LNA_GAINSELECT_MAX; 
+	  	_pa_mode = PA_MODE_PA1_PA2_20dbm;
+	  	_ocp = OCP_OFF;
+	  	_modulation = MOD_OOK;
+	  	_sensitivity_boost = false;
 	  }
 
-	//common functions
-	void setFrequency(uint32_t freqHz);
+		//common functions
+		void setFrequency(uint32_t freqHz);
     void setFrequencyMHz(float f);
     void setFrequencyDev(uint32_t deviation);
     void setModulationType(uint8_t mod);
-	uint32_t getFrequency();
-	void standby(); //puts rfm in standby mode
-	void setMode(byte mode);
+		uint32_t getFrequency();
+		void standby(); //puts rfm in standby mode
+		void setMode(byte mode);
 	
+		//transmitter functions
+  	void initializeTransmit();
+		void setTransmitPower(byte dbm, int PA_modes, int OCP); //also puts in TX mode
+		void send(bool signal);
+	
+	
+		//receiver functions
+  	void initializeReceive();
+		void threshTypeFixed(bool fixed);
+		void setLNAGain(byte lna_gain);
+ 	 	int8_t readRSSI(bool forceTrigger=false);
+		void setBandwidth(uint8_t bw);
+		void setRSSIThreshold(uint8_t rssi);
+		void setFixedThreshold(uint8_t threshold);
+		void setSensitivityBoost(bool sensitivity_boost);
+		bool poll();
+	
+	
+ 	 	// SPI register writing and reading functions
+  	byte readReg(byte addr);
+  	void writeReg(byte addr, byte val);
+  	void readAllRegs();
+  	void select();
+  	void unselect();
 
-	//transmitter functions
-	//bool initialize();
-    void initializeTransmit();
-	void setTransmitPower(byte dbm, int PA_modes, int OCP); //also puts in TX mode
-	void send(bool signal);
-	
-	
-	//receiver functions
-    void initializeReceive();
-	void threshTypeFixed(bool fixed);
-	void setLNAGain(byte lna_gain);
-    int8_t readRSSI(bool forceTrigger=false);
-	void setBandwidth(uint8_t bw);
-	void setRSSIThreshold(uint8_t rssi);
-	void setFixedThreshold(uint8_t threshold);
-	void setSensitivityBoost(uint8_t value);
-	bool poll();
-	
-	
-    // allow hacking registers by making these public
-    byte readReg(byte addr);
-    void writeReg(byte addr, byte val);
-    void readAllRegs();
-    void select();
-    void unselect();
-    
 
-    byte _slaveSelectPin;
+  	byte _slaveSelectPin;
     byte _interruptPin;
-    byte _dbm;
-	byte _fixed_threshold;
-	uint8_t _rssi_threshold;
-	byte _bandwidth;
-	byte _lna_gain;
-	byte _pa_mode;
-	byte _ocp;
-	byte _modulation;
-	bool _thresh_type_fixed;
-	bool _isReceiver;
-	float _frequency;
+ 	  byte _dbm;
+	  byte _fixed_threshold;
+		byte _rssi_threshold;
+		byte _bandwidth;
+		byte _lna_gain;
+		byte _pa_mode;
+		byte _ocp;
+		byte _modulation;
+		bool _sensitivity_boost;
+		bool _thresh_type_fixed;
+		float _frequency;
 	
 	
-  protected:
+  	protected:
 
+  	//not needed
     
-
 };
 
 #endif

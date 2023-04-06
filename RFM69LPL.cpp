@@ -1,3 +1,34 @@
+/* This is a library for the RFM69HW, RFM69HCW and RFM69CW (RFM69 variants). 
+
+Made by Luis Pedro Lopes (LPL).
+
+The purpose of this library is to run these radios in continuous mode (no packets), both in OOK and FSK. 
+There are a lot of settings in this radio, so correct configuration is of most importance. This is done by writing to registers in the radio.
+All of the settings are kept in memory inside the class.
+
+
+SPI register writing and reading functions: 
+
+  --- readReg(byte addr)
+  Returns byte value
+  --- writeReg(byte addr, byte value)
+
+
+Common functions:
+
+  --- 
+
+Functions for TX: 
+
+  --- setTransmitPower(byte dbm, int PA_MODES, int OCP) 
+  Writes the output transmit power, Power Amplifier (PA) setting, and Over Current Protection boolean.
+  ---  
+
+
+  */
+
+
+
 #include <RFM69LPL.h>
 #include <RFM69LPLregisters.h>
 #include <SPI.h>
@@ -5,41 +36,6 @@
 volatile byte RFM69LPL::_mode;  // current transceiver state
 volatile int RFM69LPL::RSSI; 	// most accurate RSSI during reception (closest to the reception)
 
-/*
-bool RFM69LPL::initialize(){
-  const byte CONFIG[][2] =
-  {
-    /* 0x01 */ { REG_OPMODE, RF_OPMODE_SEQUENCER_OFF | RF_OPMODE_LISTEN_OFF | RF_OPMODE_STANDBY },
-    /* 0x02 */ { REG_DATAMODUL, RF_DATAMODUL_DATAMODE_CONTINUOUSNOBSYNC | RF_DATAMODUL_MODULATIONTYPE_OOK | RF_DATAMODUL_MODULATIONSHAPING_00 }, // no shaping
-    /* 0x03 */ { REG_BITRATEMSB, 0x03}, // bitrate: 32768 Hz
-    /* 0x04 */ { REG_BITRATELSB, 0xD1},
-    /* 0x19 */ { REG_RXBW, RF_RXBW_DCCFREQ_010 | RF_RXBW_MANT_24 | RF_RXBW_EXP_4}, // BW: 10.4 kHz
-    /* 0x1B */ { REG_OOKPEAK, RF_OOKPEAK_THRESHTYPE_PEAK | RF_OOKPEAK_PEAKTHRESHSTEP_000 | RF_OOKPEAK_PEAKTHRESHDEC_000 },
-    /* 0x1D */ { REG_OOKFIX, 6 }, // Fixed threshold value (in dB) in the OOK demodulator
-    /* 0x29 */ { REG_RSSITHRESH, 140 }, // RSSI threshold in dBm = -(REG_RSSITHRESH / 2)
-    /* 0x6F */ { REG_TESTDAGC, RF_DAGC_IMPROVED_LOWBETA0 }, // run DAGC continuously in RX mode, recommended default for AfcLowBetaOn=0
-    {255, 0}
-  };
-
-  pinMode(_slaveSelectPin, OUTPUT);
-  SPI.begin();
-  SPI.setClockDivider(SPI_CLOCK_DIV4);
-
-  Serial.begin(115200); Serial.println();
-
-  for (byte i = 0; CONFIG[i][0] != 255; i++) //write regs
-    writeReg(CONFIG[i][0], CONFIG[i][1]);
-	
-  setMode(RF69OOK_MODE_STANDBY);
-  Serial.print("Waiting for flag MODE_READY...");
-  while ((readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00); // Wait for ModeReady
-  Serial.println(" ready."); 
-
-
-  return true;
-}
-
-*/
 
 void RFM69LPL::threshTypeFixed(bool fixed){
 	if(fixed){
@@ -124,6 +120,7 @@ uint32_t RFM69LPL::getFrequency(){
 void RFM69LPL::setFrequencyMHz(float f){
   // Set literal frequency using floating point MHz value
   setFrequency(f * 1000000);
+  _frequency = f;
 }
 
 void RFM69LPL::setModulationType(uint8_t mod){
@@ -134,6 +131,8 @@ void RFM69LPL::setModulationType(uint8_t mod){
   else if(mod == MOD_FSK){
     writeReg(REG_DATAMODUL, RF_DATAMODUL_DATAMODE_CONTINUOUSNOBSYNC | RF_DATAMODUL_MODULATIONTYPE_FSK | RF_DATAMODUL_MODULATIONSHAPING_00);
   }
+
+  _modulation = mod;
 }
 
 void RFM69LPL::setFrequency(uint32_t freqHz){
@@ -147,6 +146,7 @@ void RFM69LPL::setFrequency(uint32_t freqHz){
 
 void RFM69LPL::setLNAGain(byte lna_gain){
 	writeReg(REG_LNA, RF_LNA_ZIN_50 | lna_gain);
+  _lna_gain = lna_gain;
 }
 
 void RFM69LPL::setBandwidth(uint8_t bw){
@@ -155,7 +155,7 @@ void RFM69LPL::setBandwidth(uint8_t bw){
   _bandwidth = bw;
 }
 
-void RFM69LPL::setRSSIThreshold(uint8_t rssi){ // RSSI threshold in dBm = -(REG_RSSITHRESH / 2)
+void RFM69LPL::setRSSIThreshold(byte rssi){ // RSSI threshold in dBm = -(REG_RSSITHRESH / 2) [this function's argument in not in dBm]
   // set RSSI threshold
   //writeReg(REG_RSSITHRESH, (-rssi << 1));
   writeReg(REG_RSSITHRESH, rssi);
@@ -165,12 +165,19 @@ void RFM69LPL::setRSSIThreshold(uint8_t rssi){ // RSSI threshold in dBm = -(REG_
 void RFM69LPL::setFixedThreshold(uint8_t threshold){
   // set OOK fixed threshold
   writeReg(REG_OOKFIX, threshold);
+  _fixed_threshold = threshold;
 }
 
-void RFM69LPL::setSensitivityBoost(uint8_t value){
-  // set sensitivity boost in REG_TESTLNA
-  // see: http://www.sevenwatt.com/main/rfm69-ook-dagc-sensitivity-boost-and-modulation-index
-  writeReg(REG_TESTLNA, value);
+void RFM69LPL::setSensitivityBoost(bool sensitivity_boost){
+  /*High sensitivity or normal sensitivity mode:
+0x1B → Normal mode
+0x2D → High sensitivity mode*/
+  if (sensitivity_boost)
+    writeReg(REG_TESTLNA, 0x2D);
+  else
+    writeReg(REG_TESTLNA, 0x1B)
+
+  _sensitivity_boost = sensitivity_boost;
 }
 
 void RFM69LPL::setMode(byte newMode){
