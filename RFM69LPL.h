@@ -49,6 +49,8 @@ class RFM69LPL {
 	  	_sensitivity_boost = false;
 	  }
 
+
+	  void init();
 		//common functions
 		void setFrequency(uint32_t freqHz);
     void setFrequencyMHz(float f);
@@ -82,6 +84,7 @@ class RFM69LPL {
   	void readAllRegs();
   	void select();
   	void unselect();
+  	void readAllSettings();
 
 
   	byte _slaveSelectPin;

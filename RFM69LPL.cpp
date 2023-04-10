@@ -3,29 +3,17 @@
 Made by Luis Pedro Lopes (LPL).
 
 The purpose of this library is to run these radios in continuous mode (no packets), both in OOK and FSK. 
-There are a lot of settings in this radio, so correct configuration is of most importance. This is done by writing to registers in the radio.
+There are a lot of settings in this radio, so correct configuration is of most importance. This is done 
+by writing to registers in the radio. After that, the interaction with the radio is done by either writing
+to DIO2 pin for transmitting, or reading from DIO2 for receiving, for both OOK or FSK.
+
 All of the settings are kept in memory inside the class.
+This library is made primarily for ESP32 and ESP8266 based boards: baud rate for serial is set on init() to 115200.
+But apart from that, it should work on other boards.
 
+The main tenet of this library design is to enable simple and robust register writing and reading, allowing changing every setting available in the radio.
 
-SPI register writing and reading functions: 
-
-  --- readReg(byte addr)
-  Returns byte value
-  --- writeReg(byte addr, byte value)
-
-
-Common functions:
-
-  --- 
-
-Functions for TX: 
-
-  --- setTransmitPower(byte dbm, int PA_MODES, int OCP) 
-  Writes the output transmit power, Power Amplifier (PA) setting, and Over Current Protection boolean.
-  ---  
-
-
-  */
+*/
 
 
 
@@ -36,6 +24,23 @@ Functions for TX:
 volatile byte RFM69LPL::_mode;  // current transceiver state
 volatile int RFM69LPL::RSSI; 	// most accurate RSSI during reception (closest to the reception)
 
+void RFM69LPL::init(){ //initialize radio with default regs and put in standby
+  Serial.begin(115200);
+  SPI.begin();
+
+  threshTypeFixed(_thresh_type_fixed);
+  setTransmitPower(_dbm, _pa_mode, _ocp);
+  setBandwidth(_bandwidth);
+  setFixedThreshold(_fixed_threshold); 
+  setFrequencyMHz(_frequency);
+  threshTypeFixed(_thresh_type_fixed);
+  setRSSIThreshold(_rssi_threshold);
+  setLNAGain(_lna_gain);
+  setModulationType(_modulation);
+
+  standby();
+}
+
 
 void RFM69LPL::threshTypeFixed(bool fixed){
 	if(fixed){
@@ -44,6 +49,7 @@ void RFM69LPL::threshTypeFixed(bool fixed){
 	else{
 		writeReg(REG_OOKPEAK, RF_OOKPEAK_THRESHTYPE_PEAK | RF_OOKPEAK_PEAKTHRESHSTEP_000 | RF_OOKPEAK_PEAKTHRESHDEC_000);
 	}
+  _thresh_type_fixed = fixed;
 }
 
 void RFM69LPL::setTransmitPower(byte dbm, int PA_modes, int OCP) { //keep a minimum of -11 dbm to avoid writing negative values into the palevel reg.
@@ -83,7 +89,6 @@ void RFM69LPL::initializeReceive(){
   setLNAGain(_lna_gain);
   setModulationType(_modulation);
   
-
   setMode(RF69OOK_MODE_RX); //put in receive mode
 }
 
@@ -175,7 +180,7 @@ void RFM69LPL::setSensitivityBoost(bool sensitivity_boost){
   if (sensitivity_boost)
     writeReg(REG_TESTLNA, 0x2D);
   else
-    writeReg(REG_TESTLNA, 0x1B)
+    writeReg(REG_TESTLNA, 0x1B);
 
   _sensitivity_boost = sensitivity_boost;
 }
@@ -222,8 +227,6 @@ int8_t RFM69LPL::readRSSI(bool forceTrigger) {
 }
 
 byte RFM69LPL::readReg(byte addr){
-  if(_isReceiver) digitalWrite(5, HIGH); //pull transmitter high to avoid interference with receiver SPI
-  else digitalWrite(4, HIGH); //pull receiver high to avoid interference with transmitter SPI
   select();
   SPI.transfer(addr & 0x7F);
   byte regval = SPI.transfer(0);
@@ -237,8 +240,6 @@ void RFM69LPL::setFrequencyDev(uint32_t deviation){
 }
 
 void RFM69LPL::writeReg(byte addr, byte value){
-  if(_isReceiver) digitalWrite(5, HIGH); //pull transmitter high to avoid interference with receiver SPI
-  else digitalWrite(4, HIGH); //pull receiver high to avoid interference with transmitter SPI
   select();
   SPI.transfer(addr | 0x80);
   SPI.transfer(value);
@@ -270,4 +271,8 @@ void RFM69LPL::readAllRegs(){
     Serial.print(" - ");
     Serial.println(regVal,BIN);
   }
+}
+
+void RFM69LPL::readAllSettings() {
+  
 }
