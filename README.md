@@ -2,7 +2,7 @@
 RFM69HW custom radio library for OOK/FSK continuous mode only - register setups and radio control. 
 
 Functions: 
-- `initialize()` initializes radio in default mode (OOK base settings) and sets radio in standby;
+- `init()` initializes radio in default mode (OOK base settings) and sets radio in standby;
 - `poll()` and `send()` read and write the DIO2 pin respectively;
 - `transmitBegin()`, `transmitEnd()`, `receiveBegin()` and `receiveEnd()` write radio mode registers;
 - `setFrequencyMHz()`, `setFrequency()` and `getFrequency()` change and/or read the frequency regs appropriately;
