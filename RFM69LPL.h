@@ -57,17 +57,16 @@ class RFM69LPL {
     void setFrequencyDev(uint32_t deviation);
     void setModulationType(uint8_t mod);
 		uint32_t getFrequency();
-		void standby(); //puts rfm in standby mode
 		void setMode(byte mode);
 	
 		//transmitter functions
-  	void initializeTransmit();
+  	void txBegin();
 		void setTransmitPower(byte dbm, int PA_modes, int OCP); //also puts in TX mode
 		void send(bool signal);
 	
 	
 		//receiver functions
-  	void initializeReceive();
+  	void rxBegin();
 		void threshTypeFixed(bool fixed);
 		void setLNAGain(byte lna_gain);
  	 	int8_t readRSSI(bool forceTrigger=false);

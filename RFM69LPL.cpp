@@ -27,6 +27,7 @@ volatile int RFM69LPL::RSSI; 	// most accurate RSSI during reception (closest to
 void RFM69LPL::init(){ //initialize radio with default regs and put in standby
   Serial.begin(115200);
   SPI.begin();
+  pinMode(_slaveSelectPin, OUTPUT);
 
   threshTypeFixed(_thresh_type_fixed);
   setTransmitPower(_dbm, _pa_mode, _ocp);
@@ -38,7 +39,7 @@ void RFM69LPL::init(){ //initialize radio with default regs and put in standby
   setLNAGain(_lna_gain);
   setModulationType(_modulation);
 
-  standby();
+  setMode(RF69OOK_MODE_STANDBY);
 }
 
 
@@ -78,27 +79,13 @@ void RFM69LPL::setTransmitPower(byte dbm, int PA_modes, int OCP) { //keep a mini
   _ocp = OCP;
 }
 
-void RFM69LPL::initializeReceive(){ 
+void RFM69LPL::rxBegin(){ 
   pinMode(_interruptPin, INPUT);
-  
-  setBandwidth(_bandwidth);
-  setFixedThreshold(_fixed_threshold); 
-  setFrequencyMHz(_frequency);
-  threshTypeFixed(_thresh_type_fixed);
-  setRSSIThreshold(_rssi_threshold);
-  setLNAGain(_lna_gain);
-  setModulationType(_modulation);
-  
   setMode(RF69OOK_MODE_RX); //put in receive mode
 }
 
-void RFM69LPL::initializeTransmit(){ 
+void RFM69LPL::txBegin(){ 
   pinMode(_interruptPin, OUTPUT);
-  
-  setFrequencyMHz(_frequency);
-  setTransmitPower(_dbm, _pa_mode, _ocp);
-  setModulationType(_modulation);
-  
   setMode(RF69OOK_MODE_TX); //put in transmit mode
 }
 
@@ -110,11 +97,6 @@ bool RFM69LPL::poll(){
 void RFM69LPL::send(bool signal){
   // Send a 1 or 0 signal in OOK mode
   digitalWrite(_interruptPin, signal);
-}
-
-void RFM69LPL::standby(){
-  // Turn the radio back to standby
-  setMode(RF69OOK_MODE_STANDBY);
 }
 
 uint32_t RFM69LPL::getFrequency(){ 
