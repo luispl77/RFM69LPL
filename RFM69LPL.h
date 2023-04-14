@@ -32,7 +32,11 @@ class RFM69LPL {
     static volatile int RSSI; //most accurate RSSI during reception (closest to the reception)
     static volatile byte _mode; //should be protected?
 
+<<<<<<< Updated upstream
     RFM69LPL(byte slaveSelectPin, byte interruptPin) { //constructor for default values
+=======
+    RFM69LPL(byte slaveSelectPin, byte interruptPin, bool isReceiver=true) { //contructor
+>>>>>>> Stashed changes
       _slaveSelectPin = slaveSelectPin;
       _interruptPin = interruptPin;
       _mode = RF69OOK_MODE_STANDBY;
