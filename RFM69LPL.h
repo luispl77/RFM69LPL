@@ -43,7 +43,7 @@ class RFM69LPL {
 	  	_frequency = 433.920; 
 	  	_thresh_type_fixed = false;
 	  	_rssi_threshold = 255;
-	  	_lna_gain = RF_LNA_GAINSELECT_MAX; 
+	  	_lna_gain = RF_LNA_GAINSELECT_AUTO; 
 	  	_pa_mode = PA_MODE_PA1_PA2_20dbm;
 	  	_ocp = OCP_OFF;
 	  	_modulation = MOD_OOK;
