@@ -90,12 +90,10 @@ void RFM69LPL::txBegin(){
 }
 
 bool RFM69LPL::poll(){
-  // Poll for OOK signal
   return digitalRead(_interruptPin);
 }
 
 void RFM69LPL::send(bool signal){
-  // Send a 1 or 0 signal in OOK mode
   digitalWrite(_interruptPin, signal);
 }
 
