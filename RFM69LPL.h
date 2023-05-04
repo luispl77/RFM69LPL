@@ -29,8 +29,6 @@
 
 class RFM69LPL {
   public:
-    static volatile int RSSI; //most accurate RSSI during reception (closest to the reception)
-    static volatile byte _mode; //should be protected?
 
     RFM69LPL(byte slaveSelectPin, byte interruptPin) { //constructor for default values
 
@@ -87,6 +85,7 @@ class RFM69LPL {
   	void readAllSettings();
 
 
+  	byte _mode;
   	byte _slaveSelectPin;
     byte _interruptPin;
  	  byte _dbm;

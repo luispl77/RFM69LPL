@@ -21,8 +21,6 @@ The main tenet of this library design is to enable simple and robust register wr
 #include <RFM69LPLregisters.h>
 #include <SPI.h>
 
-volatile byte RFM69LPL::_mode;  // current transceiver state
-volatile int RFM69LPL::RSSI; 	// most accurate RSSI during reception (closest to the reception)
 
 void RFM69LPL::init(){ //initialize radio with default regs and put in standby
   Serial.begin(115200);
@@ -55,7 +53,6 @@ void RFM69LPL::threshTypeFixed(bool fixed){
 
 void RFM69LPL::setTransmitPower(byte dbm, int PA_modes, int OCP) { //keep a minimum of -11 dbm to avoid writing negative values into the palevel reg.
   pinMode(_interruptPin, OUTPUT);
-  setMode(RF69OOK_MODE_TX); //put in transmit mode
   switch(PA_modes){
     case PA_MODE_PA0:
       writeReg(REG_PALEVEL, RF_PALEVEL_PA0_ON | RF_PALEVEL_PA1_OFF | RF_PALEVEL_PA2_OFF | (dbm > 13 ? 31 : (dbm + 18)) ); //RegOutputPower max: 31, min: 0; formula: Pout = -18 + Reg_OutputPower
@@ -166,7 +163,7 @@ void RFM69LPL::setSensitivityBoost(bool sensitivity_boost){
 }
 
 void RFM69LPL::setMode(byte newMode){
-    if (newMode == _mode) return;
+    if (newMode == _mode){Serial.print(_mode); Serial.println(" redundant mode change"); return;} 
 
     switch (newMode) {
         case RF69OOK_MODE_TX:
@@ -237,6 +234,7 @@ void RFM69LPL::select() {
 
 void RFM69LPL::unselect() {
   // UNselect the transceiver chip
+  pinMode(_slaveSelectPin, OUTPUT); //make this callable before init
   digitalWrite(_slaveSelectPin, HIGH);
 }
 
