@@ -36,7 +36,7 @@ class RFM69LPL {
       _interruptPin = interruptPin;
       _mode = RF69OOK_MODE_STANDBY;
       _dbm = 20;
-	  	_fixed_threshold = 50; 
+	  	_fixed_threshold = 115; 
 	  	_bandwidth = OOK_BW_100_0; 
 	  	_frequency = 433.920; 
 	  	_thresh_type_fixed = false;
@@ -57,6 +57,7 @@ class RFM69LPL {
     void setModulationType(uint8_t mod);
 		uint32_t getFrequency();
 		void setMode(byte mode);
+		void standby();
 	
 		//transmitter functions
   	void txBegin();

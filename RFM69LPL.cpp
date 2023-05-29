@@ -254,3 +254,7 @@ void RFM69LPL::readAllRegs(){
 void RFM69LPL::readAllSettings() {
   
 }
+
+void RFM69LPL::standby() {
+  setMode(RF69OOK_MODE_STANDBY);
+}
