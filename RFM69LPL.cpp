@@ -26,7 +26,10 @@ void RFM69LPL::init(){ //initialize radio with default regs and put in standby
   Serial.begin(115200);
   SPI.begin();
   pinMode(_slaveSelectPin, OUTPUT);
+  setMode(RF69OOK_MODE_STANDBY);
+}
 
+void RFM69LPL::updateSettings(){
   threshTypeFixed(_thresh_type_fixed);
   setTransmitPower(_dbm, _pa_mode, _ocp);
   setBandwidth(_bandwidth);
@@ -36,8 +39,7 @@ void RFM69LPL::init(){ //initialize radio with default regs and put in standby
   setRSSIThreshold(_rssi_threshold);
   setLNAGain(_lna_gain);
   setModulationType(_modulation);
-
-  setMode(RF69OOK_MODE_STANDBY);
+  setFrequencyDev(_deviation);
 }
 
 
@@ -94,9 +96,9 @@ void RFM69LPL::send(bool signal){
   digitalWrite(_interruptPin, signal);
 }
 
-uint32_t RFM69LPL::getFrequency(){ 
-  // return the frequency (in Hz) by transforming to uint32_t and shifting the 3 bytes accordingly
-  return RF69OOK_FSTEP * (((uint32_t)readReg(REG_FRFMSB)<<16) + ((uint16_t)readReg(REG_FRFMID)<<8) + readReg(REG_FRFLSB)); 
+float RFM69LPL::getFrequency(){ 
+  // return the frequency (in MHz) by transforming to uint32_t and shifting the 3 bytes accordingly
+  return (RF69OOK_FSTEP * (((uint32_t)readReg(REG_FRFMSB)<<16) + ((uint16_t)readReg(REG_FRFMID)<<8) + readReg(REG_FRFLSB)))/1000000; 
 }
 
 void RFM69LPL::setFrequencyMHz(float f){
@@ -135,6 +137,14 @@ void RFM69LPL::setBandwidth(uint8_t bw){
   // set OOK/FSK bandwidth
   writeReg(REG_RXBW, readReg(REG_RXBW) & 0xE0 | bw);
   _bandwidth = bw;
+}
+
+//finds the index of the bandwidth in the register, starting at the 1.3khz bw (0),
+//and going to 250khz (23)
+byte RFM69LPL::getBandwidthIndex(){
+  byte bw = readReg(REG_RXBW) & 0x1F; //extract 5 LSBs
+  byte index = (7 - (bw & 0x07)) * 3 + (2 - ((bw & 0x18) >> 3)); //conversion, taking the mant and the exp, and getting the index
+  return index;
 }
 
 void RFM69LPL::setRSSIThreshold(byte rssi){ // RSSI threshold in dBm = -(REG_RSSITHRESH / 2) [this function's argument in not in dBm]
@@ -216,6 +226,12 @@ void RFM69LPL::setFrequencyDev(uint32_t deviation){
   writeReg(REG_FDEVLSB, (deviation/61));
 }
 
+uint16_t RFM69LPL::getFrequencyDev(){
+  uint16_t dev;
+  dev = ((readReg(REG_FDEVMSB) << 8) + (readReg(REG_FDEVLSB)))*61;
+  return dev;
+}
+
 void RFM69LPL::writeReg(byte addr, byte value){
   select();
   SPI.transfer(addr | 0x80);
@@ -252,7 +268,19 @@ void RFM69LPL::readAllRegs(){
 }
 
 void RFM69LPL::readAllSettings() {
-  
+  float bw[24] = {1.3, 1.6, 2.0, 2.6, 3.1, 3.9, 5.2, 6.3, 7.8, 10.4, 12.5, 15.6, 20.8, 25.0, 31.3, 41.7, 50.0, 62.5, 83.3, 100.0, 125.0, 166.7, 200.0, 250.0};
+  Serial.print("power(dbm): "); Serial.println(_dbm);
+  Serial.print("fixed threshold: "); Serial.println(_fixed_threshold);
+  Serial.print("thresh type fixed: "); Serial.println(_thresh_type_fixed);
+  Serial.print("bandwidth: "); Serial.println(bw[getBandwidthIndex()]);
+  Serial.print("frequency: "); Serial.println(_frequency, 3);
+  Serial.print("rssi threshold: "); Serial.println(_rssi_threshold);
+  Serial.print("LNA gain: "); Serial.println(_lna_gain);
+  Serial.print("pa mode: "); Serial.println(_pa_mode);
+  Serial.print("ocp: "); Serial.println(_ocp);
+  Serial.print("modulation: "); Serial.println(_modulation);
+  Serial.print("sensitivity boost: "); Serial.println(_sensitivity_boost);
+  Serial.print("deviation: "); Serial.println(_deviation);
 }
 
 void RFM69LPL::standby() {

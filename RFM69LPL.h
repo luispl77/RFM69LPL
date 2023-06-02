@@ -13,7 +13,7 @@
 #define RF69OOK_MODE_TX          4 // TX MODE
 
 #define MOD_OOK 1 //on off keying modulation
-#define MOD_FSK 2 //frequency shit keying modulation
+#define MOD_FSK 0 //frequency shit keying modulation
 
 #define PA_MODE_PA0 1
 #define PA_MODE_PA1 2
@@ -46,18 +46,22 @@ class RFM69LPL {
 	  	_ocp = OCP_OFF;
 	  	_modulation = MOD_OOK;
 	  	_sensitivity_boost = false;
+	  	_deviation = 5002; //default value 5khz
 	  }
 
 
 	  void init();
+	  void updateSettings();
 		//common functions
 		void setFrequency(uint32_t freqHz);
     void setFrequencyMHz(float f);
     void setFrequencyDev(uint32_t deviation);
     void setModulationType(uint8_t mod);
-		uint32_t getFrequency();
+		float getFrequency();
+		byte getBandwidthIndex();
 		void setMode(byte mode);
 		void standby();
+		uint16_t getFrequencyDev();
 	
 		//transmitter functions
   	void txBegin();
@@ -100,6 +104,8 @@ class RFM69LPL {
 		bool _sensitivity_boost;
 		bool _thresh_type_fixed;
 		float _frequency;
+		uint32_t _deviation;
+
 	
 	
   	protected:
