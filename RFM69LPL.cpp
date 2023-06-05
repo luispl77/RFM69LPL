@@ -40,6 +40,8 @@ void RFM69LPL::updateSettings(){
   setLNAGain(_lna_gain);
   setModulationType(_modulation);
   setFrequencyDev(_deviation);
+  writeReg(REG_BITRATEMSB, 0x01); //RSSI measurements happen twice every bit period, 
+  writeReg(REG_BITRATELSB, 0x40); //so we need the bit rate as fast as possible for the best resolution. Here is is set at 100 000 b/s, or 1 us resolution.
 }
 
 
