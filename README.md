@@ -1,7 +1,7 @@
 # RFM69LPL
 RFM69HW custom radio library for OOK/FSK continuous mode only.
 
-Function description (AI generated): 
+Function's descriptions (AI generated): 
 
 1. `init()`: This function initializes the radio module by setting the necessary parameters and putting it in standby mode. It configures the communication settings, such as the baud rate for serial communication and SPI interface, and sets the pin mode for the slave select pin. It also sets the radio mode to standby.
 
